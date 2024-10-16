@@ -5,12 +5,7 @@ from io import BytesIO
 from basicsr.archs.rrdbnet_arch import RRDBNet
 import torch
 from realesrgan import RealESRGANer
-
-# Обработка изменений в импорте для разных версий torchvision
-try:
-    from torchvision.transforms.functional import rgb_to_grayscale
-except ImportError:
-    from torchvision.transforms.functional_tensor import rgb_to_grayscale
+from torchvision.transforms.functional import rgb_to_grayscale
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -39,21 +34,11 @@ def save_image(img, path):
 
 def upscale_image(url, save_path):
     input_img = load_image_from_url(url)
-    
-    # Переведите изображение в numpy массив
-    input_img_np = np.array(input_img)
-    
-    # Убедитесь, что изображение имеет диапазон [0, 255]
-    input_img_np = input_img_np.astype(np.uint8)
-    
+    input_img_np = np.array(input_img).astype(np.uint8)
+
     try:
-        # Увеличьте изображение
         output_img, _ = upsampler.enhance(input_img_np, outscale=4)
-        
-        # Переведите результат обратно в изображение
         output_img = Image.fromarray(output_img)
-        
-        # Сохраните изображение
         save_image(output_img, save_path)
         print(f'Изображение сохранено в {save_path}')
     except RuntimeError as e:
@@ -61,7 +46,7 @@ def upscale_image(url, save_path):
     except UnboundLocalError as e:
         print(f'Ошибка: {e}')
 
-# Пример использования
+# Example usage
 image_url = 'https://cdn.donmai.us/sample/e2/34/__original_drawn_by_ratatatat74__sample-e234a4fac1cf7d056d596ef64937cb8a.jpg'
 save_path = 'output_image.png'
 
