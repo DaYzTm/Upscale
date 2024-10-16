@@ -2,10 +2,15 @@ import numpy as np
 from PIL import Image
 import requests
 from io import BytesIO
-import torch
 from basicsr.archs.rrdbnet_arch import RRDBNet
-from basicsr.utils.download_util import load_file_from_url
+import torch
 from realesrgan import RealESRGANer
+
+# Обработка изменений в импорте для разных версий torchvision
+try:
+    from torchvision.transforms.functional import rgb_to_grayscale
+except ImportError:
+    from torchvision.transforms.functional_tensor import rgb_to_grayscale
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -13,15 +18,9 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=6, num_grow_ch=32, scale=4)
 model = model.to(device)
 
-# Download the model weights
-model_path = load_file_from_url(
-    'https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.2.4/RealESRGAN_x4plus_anime_6B.pth',
-    model_dir='weights'
-)
-
 upsampler = RealESRGANer(
     scale=4,
-    model_path=model_path,
+    model_path='https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.2.4/RealESRGAN_x4plus_anime_6B.pth',
     model=model,
     tile=128,
     tile_pad=10,
@@ -41,28 +40,28 @@ def save_image(img, path):
 def upscale_image(url, save_path):
     input_img = load_image_from_url(url)
     
-    # Convert PIL Image to numpy array
+    # Переведите изображение в numpy массив
     input_img_np = np.array(input_img)
     
-    # Ensure the image is in the range [0, 255]
+    # Убедитесь, что изображение имеет диапазон [0, 255]
     input_img_np = input_img_np.astype(np.uint8)
     
     try:
-        # Upscale the image
+        # Увеличьте изображение
         output_img, _ = upsampler.enhance(input_img_np, outscale=4)
         
-        # Convert the result back to an image
+        # Переведите результат обратно в изображение
         output_img = Image.fromarray(output_img)
         
-        # Save the image
+        # Сохраните изображение
         save_image(output_img, save_path)
-        print(f'Image saved to {save_path}')
+        print(f'Изображение сохранено в {save_path}')
     except RuntimeError as e:
-        print(f'Error: {e}')
+        print(f'Ошибка: {e}')
     except UnboundLocalError as e:
-        print(f'Error: {e}')
+        print(f'Ошибка: {e}')
 
-# Example usage
+# Пример использования
 image_url = 'https://cdn.donmai.us/sample/e2/34/__original_drawn_by_ratatatat74__sample-e234a4fac1cf7d056d596ef64937cb8a.jpg'
 save_path = 'output_image.png'
 
