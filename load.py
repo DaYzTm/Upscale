@@ -5,7 +5,6 @@ from io import BytesIO
 from basicsr.archs.rrdbnet_arch import RRDBNet
 import torch
 from realesrgan import RealESRGANer
-from torchvision.transforms.functional import rgb_to_grayscale
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -17,10 +16,10 @@ upsampler = RealESRGANer(
     scale=4,
     model_path='https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.2.4/RealESRGAN_x4plus_anime_6B.pth',
     model=model,
-    tile=128,
+    tile=128,  # Установите размер тайла (например, 256)
     tile_pad=10,
     pre_pad=0,
-    half=False,
+    half=False,  # Установите half в False
     device=device
 )
 
@@ -34,11 +33,21 @@ def save_image(img, path):
 
 def upscale_image(url, save_path):
     input_img = load_image_from_url(url)
-    input_img_np = np.array(input_img).astype(np.uint8)
-
+    
+    # Переведите изображение в numpy массив
+    input_img_np = np.array(input_img)
+    
+    # Убедитесь, что изображение имеет диапазон [0, 255]
+    input_img_np = input_img_np.astype(np.uint8)
+    
     try:
-        output_img, _ = upsampler.enhance(input_img_np, outscale=4)
+        # Увеличьте изображение
+        output_img, _ = upsampler.enhance(input_img_np)
+        
+        # Переведите результат обратно в изображение
         output_img = Image.fromarray(output_img)
+        
+        # Сохраните изображение
         save_image(output_img, save_path)
         print(f'Изображение сохранено в {save_path}')
     except RuntimeError as e:
@@ -46,7 +55,7 @@ def upscale_image(url, save_path):
     except UnboundLocalError as e:
         print(f'Ошибка: {e}')
 
-# Example usage
+# Пример использования
 image_url = 'https://cdn.donmai.us/sample/e2/34/__original_drawn_by_ratatatat74__sample-e234a4fac1cf7d056d596ef64937cb8a.jpg'
 save_path = 'output_image.png'
 
